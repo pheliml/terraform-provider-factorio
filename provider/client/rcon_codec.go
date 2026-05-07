@@ -36,7 +36,7 @@ const packetSizeOverhead = 10
 
 type packetHeader struct {
 	Size int32
-	Id   int32
+	ID   int32
 	Type int32
 }
 
@@ -45,7 +45,7 @@ func readPacketHeader(reader io.Reader) (*packetHeader, error) {
 	if err := binary.Read(reader, binary.LittleEndian, &p.Size); err != nil {
 		return nil, err
 	}
-	if err := binary.Read(reader, binary.LittleEndian, &p.Id); err != nil {
+	if err := binary.Read(reader, binary.LittleEndian, &p.ID); err != nil {
 		return nil, err
 	}
 	if err := binary.Read(reader, binary.LittleEndian, &p.Type); err != nil {
@@ -63,7 +63,7 @@ func (p *packet) Write(writer io.Writer) error {
 	if err := binary.Write(writer, binary.LittleEndian, p.Size); err != nil {
 		return err
 	}
-	if err := binary.Write(writer, binary.LittleEndian, p.Id); err != nil {
+	if err := binary.Write(writer, binary.LittleEndian, p.ID); err != nil {
 		return err
 	}
 	if err := binary.Write(writer, binary.LittleEndian, p.Type); err != nil {
@@ -83,19 +83,19 @@ func (p *packet) Write(writer io.Writer) error {
 	return nil
 }
 
-func newPacket(id int32, packetTypeId int32, body string) (*packet, error) {
+func newPacket(id int32, packetTypeID int32, body string) (*packet, error) {
 	size := len(body) + packetSizeOverhead
 	if size > math.MaxInt32 {
 		return nil, errors.New("body too large for protocol")
 	}
-	return &packet{packetHeader{int32(size), id, packetTypeId}, body}, nil
+	return &packet{packetHeader{int32(size), id, packetTypeID}, body}, nil
 }
 
 type rconCodec struct {
 	conn io.ReadWriteCloser
 
 	// Some state we need to carry to adapt to the rpc interface
-	prevAuthId  int32
+	prevAuthID  int32
 	nextBodyLen int32
 }
 
@@ -112,18 +112,18 @@ func (c *rconCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 		// 64-bit seq to 32
 		return errors.New("maximum sequence number exceeded: rcon only supports 32-bit sequence numbers: recreate the client to reset the counter")
 	}
-	packetId := int32(r.Seq)
-	var packetTypeId int32
+	packetID := int32(r.Seq)
+	var packetTypeID int32
 	switch r.ServiceMethod {
 	case ServiceMethods.Auth:
-		packetTypeId = packetTypeIds.auth
-		c.prevAuthId = packetId
+		packetTypeID = packetTypeIds.auth
+		c.prevAuthID = packetID
 	case ServiceMethods.ExecCommand:
-		packetTypeId = packetTypeIds.execCommand
+		packetTypeID = packetTypeIds.execCommand
 	default:
 		return fmt.Errorf("invalid method \"%s\"", r.ServiceMethod)
 	}
-	packet, err := newPacket(packetId, packetTypeId, param.(string))
+	packet, err := newPacket(packetID, packetTypeID, param.(string))
 	if err != nil {
 		return err
 	}
@@ -139,14 +139,14 @@ func (c *rconCodec) ReadResponseHeader(r *rpc.Response) error {
 	switch p.Type {
 	case packetTypeIds.authResponse:
 		r.ServiceMethod = ServiceMethods.Auth
-		r.Seq = uint64(c.prevAuthId)
+		r.Seq = uint64(c.prevAuthID)
 		// ID == -1 is the error sentinel
-		if p.Id == -1 {
+		if p.ID == -1 {
 			r.Error = "rcon auth failed"
 		}
 		return nil
 	case packetTypeIds.responseValue:
-		if p.Id == c.prevAuthId {
+		if p.ID == c.prevAuthID {
 			// This appears to be the inital part of the 2 part response to an auth
 			// Consume the empty body
 			if err := c.ReadResponseBody(nil); err != nil {
@@ -156,11 +156,11 @@ func (c *rconCodec) ReadResponseHeader(r *rpc.Response) error {
 			return c.ReadResponseHeader(r)
 		} else {
 			r.ServiceMethod = ServiceMethods.ExecCommand
-			r.Seq = uint64(p.Id)
+			r.Seq = uint64(p.ID)
 			return nil
 		}
 	default:
-		return fmt.Errorf("unexpected packet type id %d", p.Id)
+		return fmt.Errorf("unexpected packet type id %d", p.ID)
 	}
 }
 

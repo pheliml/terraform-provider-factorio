@@ -9,12 +9,12 @@ type FactorioClient struct {
 	conn *RCON
 }
 
-func NewFactorioClient(rcon_host string, rcon_password string) (*FactorioClient, error) {
-	r, err := Dial(rcon_host)
+func NewFactorioClient(rconHost string, rconPassword string) (*FactorioClient, error) {
+	r, err := Dial(rconHost)
 	if err != nil {
 		return nil, err
 	}
-	err = r.Authenticate(rcon_password)
+	err = r.Authenticate(rconPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -43,26 +43,26 @@ func (client *FactorioClient) DoHandShake() error {
 	return nil
 }
 
-func (client *FactorioClient) Read(resource_type string, query interface{}, result_out interface{}) error {
-	return client.doCall(result_out, "read", resource_type, query)
+func (client *FactorioClient) Read(resourceType string, query interface{}, resultOut interface{}) error {
+	return client.doCall(resultOut, "read", resourceType, query)
 }
 
-func (client *FactorioClient) Create(resource_type string, create_config interface{}, result_out interface{}) error {
-	return client.doCall(result_out, "create", resource_type, create_config)
+func (client *FactorioClient) Create(resourceType string, createConfig interface{}, resultOut interface{}) error {
+	return client.doCall(resultOut, "create", resourceType, createConfig)
 }
 
 // Perhaps Update should just return success / failure?
-func (client *FactorioClient) Update(resource_type string, resource_id string, update_opts interface{}, result_out interface{}) error {
-	return client.doCall(result_out, "update", resource_type, resource_id, update_opts)
+func (client *FactorioClient) Update(resourceType string, resourceID string, updateOpts interface{}, resultOut interface{}) error {
+	return client.doCall(resultOut, "update", resourceType, resourceID, updateOpts)
 }
 
-func (client *FactorioClient) Delete(resource_type string, resource_id string) error {
+func (client *FactorioClient) Delete(resourceType string, resourceID string) error {
 	result := struct {
 		ResourceExists bool `json:"resource_exists"`
 	}{
 		ResourceExists: true,
 	}
-	err := client.doCall(&result, "delete", resource_type, resource_id)
+	err := client.doCall(&result, "delete", resourceType, resourceID)
 	if err != nil {
 		return err
 	}
@@ -72,43 +72,43 @@ func (client *FactorioClient) Delete(resource_type string, resource_id string) e
 	return nil
 }
 
-type RpcRequest struct {
+type RPCRequest struct {
 	Method string        `json:"method"`
 	Params []interface{} `json:"params"`
 }
 
-type RpcError struct {
+type RPCError struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 }
 
-type RpcResponse struct {
+type RPCResponse struct {
 	Result *json.RawMessage `json:"result"`
-	Error  *RpcError        `json:"error"`
+	Error  *RPCError        `json:"error"`
 }
 
 func (client *FactorioClient) doCall(result interface{}, method string, params ...interface{}) error {
 	if params == nil {
 		params = []interface{}{}
 	}
-	req := RpcRequest{
+	req := RPCRequest{
 		Method: method,
 		Params: params,
 	}
-	request_bytes, err := json.Marshal(req)
+	requestBytes, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
 	// Use single quotes around request_bytes
 	// to avoid conflict with json double quotes
 	// TODO: Escape single quotes in request_bytes
-	command := fmt.Sprintf("/silent-command rcon.print(remote.call('terraform-crud-api', 'call', '%s'))", request_bytes)
+	command := fmt.Sprintf("/silent-command rcon.print(remote.call('terraform-crud-api', 'call', '%s'))", requestBytes)
 	executeResponse, err := client.conn.Execute(command)
 	if err != nil {
 		return err
 	}
-	var response RpcResponse
+	var response RPCResponse
 	err = json.Unmarshal([]byte(executeResponse), &response)
 	if err != nil {
 		return fmt.Errorf("unmarshalling \"%v\": %v", executeResponse, err)
