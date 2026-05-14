@@ -10,11 +10,7 @@ type FactorioClient struct {
 }
 
 func NewFactorioClient(rconHost string, rconPassword string) (*FactorioClient, error) {
-	r, err := Dial(rconHost)
-	if err != nil {
-		return nil, err
-	}
-	err = r.Authenticate(rconPassword)
+	r, err := Dial(rconHost, rconPassword)
 	if err != nil {
 		return nil, err
 	}
