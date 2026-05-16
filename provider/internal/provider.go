@@ -39,15 +39,15 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	rcon_host := d.Get("rcon_host").(string)
-	rcon_pw := d.Get("rcon_pw").(string)
-	if rcon_host == "" {
+	rconHost := d.Get("rcon_host").(string)
+	rconPw := d.Get("rcon_pw").(string)
+	if rconHost == "" {
 		return nil, diag.Errorf("rcon_host was empty")
 	}
-	if rcon_pw == "" {
+	if rconPw == "" {
 		return nil, diag.Errorf("rcon_pw was empty")
 	}
-	client, err := client.NewFactorioClient(rcon_host, rcon_pw)
+	client, err := client.NewFactorioClient(rconHost, rconPw)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}

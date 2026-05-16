@@ -39,11 +39,11 @@ func resourceHello() *schema.Resource {
 
 func resourceHelloCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*client.FactorioClient)
-	create_config := make(map[string]interface{})
-	create_config["create_as_ghost"] = d.Get("create_as_ghost")
-	create_config["direction"] = d.Get("direction")
+	createConfig := make(map[string]interface{})
+	createConfig["create_as_ghost"] = d.Get("create_as_ghost")
+	createConfig["direction"] = d.Get("direction")
 	hello := make(map[string]interface{})
-	err := c.Create("hello", create_config, &hello)
+	err := c.Create("hello", createConfig, &hello)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -60,8 +60,8 @@ func resourceHelloRead(ctx context.Context, d *schema.ResourceData, m interface{
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	id, id_exists := hello["id"]
-	if !id_exists {
+	id, idExists := hello["id"]
+	if !idExists {
 		d.SetId("")
 		return diags
 	}
@@ -72,14 +72,14 @@ func resourceHelloRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 func resourceHelloUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*client.FactorioClient)
-	hello_updates := make(map[string]interface{})
+	helloUpdates := make(map[string]interface{})
 	if d.HasChange("direction") {
-		hello_updates["direction"] = d.Get("direction")
+		helloUpdates["direction"] = d.Get("direction")
 	}
 	err := c.Update(
 		"hello",
 		d.Id(),
-		hello_updates,
+		helloUpdates,
 		nil)
 	if err != nil {
 		return diag.FromErr(err)

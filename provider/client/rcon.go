@@ -1,43 +1,25 @@
-// Implements a client for https://developer.valvesoftware.com/wiki/Source_RCON_Protocol
-// Differs to https://github.com/gtaylor/factorio-rcon
-// mainly in that it is cocurrency-safe, handles parallel/interleaved calls
-// and is based on stdlib net/rpc client
-
 package client
 
 import (
-	"io"
-	"net"
-	"net/rpc"
+	"github.com/gorcon/rcon"
 )
 
 type RCON struct {
-	c *rpc.Client
+	conn *rcon.Conn
 }
 
-func NewClient(conn io.ReadWriteCloser) *rpc.Client {
-	return rpc.NewClientWithCodec(newRconCodec(conn))
-}
-
-func Dial(address string) (*RCON, error) {
-	conn, err := net.Dial("tcp", address)
+func Dial(address string, password string) (*RCON, error) {
+	conn, err := rcon.Dial(address, password)
 	if err != nil {
 		return nil, err
 	}
-	rcon := &RCON{c: NewClient(conn)}
-	return rcon, nil
+	return &RCON{conn: conn}, nil
 }
 
 func (r *RCON) Close() error {
-	return r.c.Close()
+	return r.conn.Close()
 }
 
 func (r *RCON) Execute(command string) (string, error) {
-	var response string
-	err := r.c.Call(ServiceMethods.ExecCommand, command, &response)
-	return response, err
-}
-
-func (r *RCON) Authenticate(password string) (err error) {
-	return r.c.Call(ServiceMethods.Auth, password, nil)
+	return r.conn.Execute(command)
 }
