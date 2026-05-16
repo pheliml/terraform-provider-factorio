@@ -26,7 +26,7 @@ function serialize(value)
     return '"' .. value .. '"'
   end
   -- Wrapped with () to prevent gsub returning a multival
-  return (string.gsub(game.table_to_json(value), '{}', '[]'))
+  return (string.gsub(helpers.table_to_json(value), '{}', '[]'))
 end
 
 exports = {
@@ -51,7 +51,7 @@ exports = {
 
 local function handle_rpc(request_string)
   local deserialize_succeeded, deserialize_result = xpcall(
-    game.json_to_table,
+    helpers.json_to_table,
     debug.traceback,
     request_string)
   if not deserialize_succeeded then
@@ -125,5 +125,5 @@ end
 remote.add_interface('terraform-crud-api', {call = call})
 
 script.on_init(function()
-  global.resource_db = {}
+  storage.resource_db = {}
 end)
